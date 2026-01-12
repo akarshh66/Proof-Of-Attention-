@@ -39,6 +39,7 @@ export interface Proof {
     lessonId: string;
     verified: boolean;
     attentionTime: number;
+    attentionScore?: number;
     proofHash: string;
     blockchainTxHash?: string;
     timestamp: string;

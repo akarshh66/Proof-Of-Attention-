@@ -9,6 +9,7 @@ import sessionRoutes from './routes/session.js';
 import verifyRoutes from './routes/verify.js';
 import proofRoutes from './routes/proof.js';
 import courseRoutes from './routes/courses.js';
+import quizRoutes from './routes/quiz.js';
 import { shardeumService } from './services/shardeum.js';
 
 const app = express();
@@ -29,6 +30,7 @@ app.use('/api/session', sessionRoutes);
 app.use('/api/verify', verifyRoutes);
 app.use('/api/proof', proofRoutes);
 app.use('/api', courseRoutes);
+app.use('/api/quiz', quizRoutes);
 
 // Health check
 app.get('/health', (req: Request, res: Response) => {

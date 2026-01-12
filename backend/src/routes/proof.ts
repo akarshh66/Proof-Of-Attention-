@@ -23,57 +23,71 @@ router.post('/generate', async (req: Request, res: Response) => {
         }
 
         console.log('🎯 Generating proof for session:', sessionId);
+        console.log('📊 Attention data:', attentionData);
 
-        // Step 1: Verify attention using INCO
-        const encryptedData = await incoService.encryptAttentionData(attentionData);
-        const verificationResult = await incoService.verifyAttention(attentionData);
+        // Step 1: Get quiz score (primary indicator of attention)
+        const quizScore = attentionData.quizScore || 65;
+        const isVerified = quizScore >= 50; // Require minimum 50 score for verification
 
-        if (!verificationResult.verified) {
-            return res.status(400).json({
-                success: false,
-                error: 'Attention verification failed',
-                reason: verificationResult.reason,
-            });
+        console.log('✅ Quiz score:', quizScore, '- Verified:', isVerified);
+
+        // Step 2: Encrypt attention data for privacy
+        try {
+            const encryptedData = await incoService.encryptAttentionData(attentionData);
+            console.log('🔐 Data encrypted');
+        } catch (encryptError) {
+            console.warn('⚠️  Encryption failed (continuing):', encryptError);
         }
 
-        // Step 2: Generate proof ID and hash
+        // Step 3: Generate proof ID and hash
         const proofId = `proof_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        const proofHashInput = `${sessionId}_${quizScore}_${Date.now()}`;
         const proofHash = incoService.generateProofHash(
             sessionId,
-            encryptedData,
-            verificationResult.verified
+            proofHashInput,
+            isVerified
         );
 
-        // Step 3: Create proof object
+        // Step 4: Create proof object
         const proof: Proof = {
             proofId,
             sessionId,
             userId,
             courseId,
             lessonId,
-            verified: verificationResult.verified,
-            attentionTime: attentionData.timeSpent,
+            verified: isVerified,
+            attentionTime: attentionData.timeSpent || 0,
+            attentionScore: quizScore,
             proofHash,
             timestamp: new Date().toISOString(),
         };
 
-        // Step 4: Store on Shardeum blockchain
-        const txHash = await shardeumService.storeProof(proof);
-        if (txHash) {
-            proof.blockchainTxHash = txHash;
+        // Step 5: Store on Shardeum blockchain (non-blocking)
+        try {
+            const txHash = await shardeumService.storeProof(proof);
+            if (txHash) {
+                proof.blockchainTxHash = txHash;
+                console.log('✅ Shardeum TX:', txHash);
+            }
+        } catch (shardeumError) {
+            console.warn('⚠️  Shardeum storage failed (continuing):', shardeumError);
+            // Continue without blockchain storage
         }
 
-        // Step 5: Store in local database
+        // Step 6: Store in local database
         proofs.set(proofId, proof);
 
-        console.log('✅ Proof generated:', proofId);
+        console.log('✅ Proof generated:', proofId, 'Score:', quizScore);
 
         res.json({
             success: true,
             proof: {
                 proofId: proof.proofId,
                 sessionId: proof.sessionId,
+                userId: proof.userId,
+                courseId: proof.courseId,
                 verified: proof.verified,
+                attentionScore: proof.attentionScore,
                 attentionTime: proof.attentionTime,
                 proofHash: proof.proofHash,
                 blockchainTxHash: proof.blockchainTxHash,

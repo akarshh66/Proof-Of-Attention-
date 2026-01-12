@@ -10,8 +10,12 @@ export default function StartSession() {
         const userId = searchParams.get("userId");
         const courseId = searchParams.get("courseId");
         const lessonId = searchParams.get("lessonId");
+        const videoUrl = searchParams.get("videoUrl");
+        const duration = searchParams.get("duration");
+        const redirectUrl = searchParams.get("redirectUrl");
+        const sessionId = searchParams.get("sessionId");
 
-        console.log("URL Params:", { userId, courseId, lessonId });
+        console.log("URL Params:", { userId, courseId, lessonId, videoUrl, duration, redirectUrl, sessionId });
         console.log("Full search params:", searchParams.toString());
 
         // If no params, show error with example
@@ -20,18 +24,22 @@ export default function StartSession() {
             return;
         }
 
-        // Generate unique sessionId with timestamp and random string
-        const sessionId = `SESSION_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        // Generate unique sessionId if not provided
+        const finalSessionId = sessionId || `SESSION_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-        // Store session data
+        // Store session data - include ALL params from course platform
         const sessionData = {
-            sessionId,
+            sessionId: finalSessionId,
             userId,
             courseId,
             lessonId,
+            videoUrl: videoUrl || 'https://commondatastorage.googleapis.com/gtv-videos-library/sample/BigBuckBunny.mp4',
+            duration: duration ? parseInt(duration) : 60,
+            redirectUrl: redirectUrl || null,
             startTime: new Date().toISOString(),
         };
 
+        console.log("Storing session data:", sessionData);
         sessionStorage.setItem("poaSession", JSON.stringify(sessionData));
 
         // Redirect to lesson page

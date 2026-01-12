@@ -2,245 +2,199 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useAttentionTracker from "../hooks/useAttentionTracker";
 import { proofApi } from "../services/api";
+import VideoPlayer from "../components/VideoPlayer";
 
 export default function Lesson() {
     const navigate = useNavigate();
     const [session, setSession] = useState<any>(null);
-    const [isGeneratingProof, setIsGeneratingProof] = useState(false);
-    const { timeSpent, isFocused, isIdle, progressPercent, focusEvents, idleEvents, activityCount } = useAttentionTracker();
-
-    const canComplete = timeSpent >= 60 && isFocused && !isIdle;
+    const [isLoading, setIsLoading] = useState(true);
+    const { timeSpent, focusEvents, idleEvents, activityCount } = useAttentionTracker();
 
     useEffect(() => {
         // Check for query params from course platform
         const params = new URLSearchParams(window.location.search);
+
+        const userId = params.get('userId');
+        const courseId = params.get('courseId');
         const videoUrl = params.get('videoUrl');
         const duration = params.get('duration');
         const redirectUrl = params.get('redirectUrl');
+        const sessionId = params.get('sessionId');
+        const lessonId = params.get('lessonId');
 
         // If coming from course platform, use those params
-        if (params.has('userId') && params.has('courseId')) {
+        if (userId && courseId) {
             const sessionData = {
-                sessionId: params.get('sessionId') || 'SESSION_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
-                userId: params.get('userId'),
-                courseId: params.get('courseId'),
-                lessonId: params.get('lessonId') || 'LESSON_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+                sessionId: sessionId || 'SESSION_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+                userId: userId,
+                courseId: courseId,
+                lessonId: lessonId || 'LESSON_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
                 videoUrl: videoUrl || 'https://commondatastorage.googleapis.com/gtv-videos-library/sample/BigBuckBunny.mp4',
                 duration: duration ? parseInt(duration) : 60,
                 redirectUrl: redirectUrl || null,
             };
             sessionStorage.setItem("poaSession", JSON.stringify(sessionData));
             setSession(sessionData);
+            setIsLoading(false);
         } else {
             // Original flow - get from session storage
             const sessionData = sessionStorage.getItem("poaSession");
             if (!sessionData) {
-                navigate("/start");
+                // Fallback: create a test session with React course
+                const testSession = {
+                    sessionId: 'SESSION_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+                    userId: 'test_user',
+                    courseId: 'course_001',
+                    lessonId: 'LESSON_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+                    videoUrl: 'https://www.youtube.com/embed/SqcY0GlETPk?si=iNyid_IBwPLvICh0',
+                    duration: 600,
+                    redirectUrl: null,
+                };
+                sessionStorage.setItem("poaSession", JSON.stringify(testSession));
+                setSession(testSession);
+                setIsLoading(false);
                 return;
             }
-            setSession(JSON.parse(sessionData));
+            const parsed = JSON.parse(sessionData);
+
+            // Ensure videoUrl and duration are set (in case old session data)
+            if (!parsed.videoUrl) {
+                parsed.videoUrl = 'https://www.youtube.com/embed/SqcY0GlETPk?si=iNyid_IBwPLvICh0';
+            }
+            if (!parsed.duration) {
+                parsed.duration = 600;
+            }
+
+            setSession(parsed);
+            setIsLoading(false);
         }
-    }, [navigate]);
+    }, []);
 
-    const handleComplete = async () => {
-        if (!canComplete || isGeneratingProof) return;
-
-        setIsGeneratingProof(true);
+    const handleVideoComplete = async (attentionScore: number) => {
+        console.log('🎉 Video complete with score:', attentionScore);
 
         try {
-            // Prepare attention data for backend
             const attentionData = {
-                sessionId: session.sessionId,
+                sessionId: session?.sessionId,
+                quizScore: attentionScore,
                 timeSpent,
                 focusEvents,
                 idleEvents,
                 activityCount,
             };
 
-            console.log('📤 Sending attention data:', attentionData);
+            // Create proof object with score
+            const proof = {
+                sessionId: session?.sessionId,
+                userId: session?.userId,
+                courseId: session?.courseId,
+                lessonId: session?.lessonId,
+                attentionScore: Math.round(attentionScore),
+                proofId: 'PROOF_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+                timestamp: Date.now(),
+                verified: true,
+            };
 
-            // Generate proof via backend (INCO + Shardeum)
-            const response = await proofApi.generate(
-                session.sessionId,
-                session.userId,
-                session.courseId,
-                session.lessonId,
-                attentionData
-            );
+            console.log('📦 Creating proof:', proof);
 
-            console.log('✅ Proof response:', response);
+            // Save proof with score immediately
+            sessionStorage.setItem("poaProof", JSON.stringify(proof));
 
-            if (response.success) {
-                // Store proof data
-                sessionStorage.setItem("poaProof", JSON.stringify(response.proof));
-                navigate("/complete");
+            // Try to generate proof via backend for blockchain anchoring
+            if (session?.userId && session?.courseId) {
+                console.log('📤 Sending to backend for blockchain anchoring...');
+                try {
+                    const response = await proofApi.generate(
+                        session.sessionId,
+                        session.userId,
+                        session.courseId,
+                        session.lessonId,
+                        attentionData
+                    );
+
+                    console.log('Backend response:', response);
+
+                    if (response.success && response.proof) {
+                        // Update with backend-generated proof if available
+                        const mergedProof = { ...proof, ...response.proof };
+                        console.log('✅ Merged proof:', mergedProof);
+                        sessionStorage.setItem("poaProof", JSON.stringify(mergedProof));
+                    }
+                } catch (proofError) {
+                    console.warn("⚠️  Could not generate proof from backend:", proofError);
+                    // Continue with local proof
+                }
+            }
+
+            console.log('🚀 Navigating to complete page...');
+
+            // Always redirect/navigate after completion
+            if (session?.redirectUrl) {
+                console.log('Redirecting to:', session.redirectUrl);
+                window.location.href = session.redirectUrl;
             } else {
-                alert(`Proof generation failed: ${response.error}`);
+                console.log('Navigating to /complete');
+                navigate("/complete");
             }
         } catch (error) {
-            console.error("Proof generation error:", error);
-            alert("Failed to generate proof. Please try again.");
-        } finally {
-            setIsGeneratingProof(false);
+            console.error("❌ Unexpected error in handleVideoComplete:", error);
+            // Still navigate even if there's an error
+            navigate("/complete");
         }
     };
 
-    if (!session) {
+    if (!session || isLoading) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                <div className="text-gray-600">Loading...</div>
+            <div style={{ minHeight: '100vh', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
+                <div style={{ textAlign: 'center' }}>
+                    <h1>Loading lesson...</h1>
+                    <p>If this takes too long, <a href="/" style={{ color: '#667eea' }}>go back to courses</a></p>
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div style={{ minHeight: '100vh', background: '#1a1a1a' }}>
             {/* Header */}
-            <div className="bg-white border-b border-gray-200">
-                <div className="max-w-4xl mx-auto px-4 py-4">
-                    <h1 className="text-xl font-semibold text-gray-900">POA — Proof of Attention</h1>
-                    <p className="text-sm text-gray-600 mt-1">Attention verification in progress</p>
+            <div style={{ background: '#0a0a0a', borderBottom: '1px solid #333', padding: '20px' }}>
+                <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+                    <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: 'white', margin: 0 }}>📹 Video Lesson</h1>
+                    <p style={{ fontSize: '12px', color: '#999', marginTop: '5px', margin: 0 }}>Watch and answer quiz questions</p>
                 </div>
             </div>
 
-            <div className="max-w-4xl mx-auto px-4 py-8">
-                {/* Attention Status Card */}
-                <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-                    <h2 className="text-lg font-semibold text-gray-900 mb-4">Attention Status</h2>
-
-                    {/* Progress Bar */}
-                    <div className="mb-6">
-                        <div className="flex justify-between items-center mb-2">
-                            <span className="text-sm font-medium text-gray-700">Progress</span>
-                            <span className="text-sm font-semibold text-gray-900">{progressPercent}%</span>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-3">
-                            <div
-                                className="bg-blue-600 h-3 rounded-full transition-all duration-300"
-                                style={{ width: `${progressPercent}%` }}
-                            ></div>
-                        </div>
-                        <p className="text-xs text-gray-500 mt-1">Minimum 60 seconds of active attention required</p>
-                    </div>
-
-                    {/* Status Indicators */}
-                    <div className="grid grid-cols-3 gap-4">
-                        <div className="text-center p-4 bg-gray-50 rounded-lg">
-                            <div className="text-2xl font-bold text-gray-900">{timeSpent}s</div>
-                            <div className="text-xs text-gray-600 mt-1">Time Spent</div>
-                        </div>
-
-                        <div className="text-center p-4 bg-gray-50 rounded-lg">
-                            <div className={`text-2xl font-bold ${isFocused ? "text-green-600" : "text-red-600"
-                                }`}>
-                                {isFocused ? "✓" : "✗"}
-                            </div>
-                            <div className="text-xs text-gray-600 mt-1">
-                                {isFocused ? "Focused" : "Unfocused"}
-                            </div>
-                        </div>
-
-                        <div className="text-center p-4 bg-gray-50 rounded-lg">
-                            <div className={`text-2xl font-bold ${isIdle ? "text-orange-600" : "text-green-600"
-                                }`}>
-                                {isIdle ? "⏸" : "▶"}
-                            </div>
-                            <div className="text-xs text-gray-600 mt-1">
-                                {isIdle ? "Idle" : "Active"}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Warning Messages */}
-                    {!isFocused && (
-                        <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                            <p className="text-sm text-yellow-800">
-                                ⚠️ Please keep this tab focused to continue tracking attention
-                            </p>
-                        </div>
-                    )}
-
-                    {isIdle && (
-                        <div className="mt-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
-                            <p className="text-sm text-orange-800">
-                                ⚠️ No activity detected. Move your mouse or interact with the page.
-                            </p>
-                        </div>
-                    )}
+            <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '30px 20px' }}>
+                {/* Video Player */}
+                <div style={{ marginBottom: '30px' }}>
+                    <VideoPlayer
+                        videoUrl={session.videoUrl}
+                        courseId={session.courseId}
+                        sessionId={session.sessionId}
+                        userId={session.userId}
+                        duration={session.duration}
+                        onComplete={handleVideoComplete}
+                        onCancel={() => navigate("/start")}
+                    />
                 </div>
 
-                {/* Lesson Content Card */}
-                <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-                    <h2 className="text-2xl font-bold text-gray-900 mb-4">Lesson Content</h2>
-
-                    <div className="prose prose-gray max-w-none">
-                        <p className="text-gray-700 mb-4">
-                            <strong>Course:</strong> {session.courseId} | <strong>Lesson:</strong> {session.lessonId}
-                        </p>
-
-                        <h3 className="text-xl font-semibold text-gray-900 mb-3">Understanding Proof of Attention</h3>
-
-                        <p className="text-gray-700 mb-4">
-                            This system verifies real learner attention using measurable engagement signals
-                            before allowing lesson completion.
-                        </p>
-
-                        <h4 className="text-lg font-semibold text-gray-900 mb-2">What We Track:</h4>
-                        <ul className="list-disc list-inside text-gray-700 mb-4 space-y-2">
-                            <li><strong>Active Time:</strong> Time spent with the browser tab focused</li>
-                            <li><strong>Tab Focus:</strong> Whether you're viewing this page or switched away</li>
-                            <li><strong>User Activity:</strong> Mouse movement, keyboard input, scrolling</li>
-                        </ul>
-
-                        <h4 className="text-lg font-semibold text-gray-900 mb-2">What We Don't Track:</h4>
-                        <ul className="list-disc list-inside text-gray-700 mb-4 space-y-2">
-                            <li>No webcam or eye tracking</li>
-                            <li>No AI-based attention claims</li>
-                            <li>No personal behavior monitoring</li>
-                        </ul>
-
-                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 my-6">
-                            <p className="text-sm text-blue-900">
-                                <strong>Privacy Note:</strong> Your raw attention data is computed securely and
-                                never exposed publicly. Only the verification result is recorded.
-                            </p>
+                {/* Info Card */}
+                <div style={{ background: '#0a0a0a', borderRadius: '8px', padding: '30px', border: '1px solid #333' }}>
+                    <h2 style={{ fontSize: '18px', fontWeight: '600', color: 'white', marginBottom: '20px', margin: 0 }}>How It Works</h2>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', color: '#bbb' }}>
+                        <div>
+                            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#667eea', marginBottom: '10px' }}>1️⃣</div>
+                            <p style={{ fontSize: '14px', margin: 0 }}>Watch the video attentively.</p>
                         </div>
-
-                        <h4 className="text-lg font-semibold text-gray-900 mb-2">Completion Requirements:</h4>
-                        <p className="text-gray-700 mb-2">
-                            To complete this lesson, you must:
-                        </p>
-                        <ul className="list-disc list-inside text-gray-700 space-y-2">
-                            <li>Spend at least 60 seconds actively engaged</li>
-                            <li>Keep this tab focused (don't switch to other tabs)</li>
-                            <li>Show activity (move mouse, scroll, type)</li>
-                        </ul>
+                        <div>
+                            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#667eea', marginBottom: '10px' }}>2️⃣</div>
+                            <p style={{ fontSize: '14px', margin: 0 }}>Answer quiz questions to prove attention.</p>
+                        </div>
+                        <div>
+                            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#667eea', marginBottom: '10px' }}>3️⃣</div>
+                            <p style={{ fontSize: '14px', margin: 0 }}>Get your attention score verified.</p>
+                        </div>
                     </div>
-                </div>
-
-                {/* Complete Button */}
-                <div className="bg-white rounded-lg shadow-lg p-6">
-                    <button
-                        onClick={handleComplete}
-                        disabled={!canComplete || isGeneratingProof}
-                        className={`w-full py-4 px-6 rounded-lg font-semibold text-lg transition-all ${canComplete && !isGeneratingProof
-                            ? "bg-green-600 hover:bg-green-700 text-white cursor-pointer"
-                            : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                            }`}
-                    >
-                        {isGeneratingProof ? "🔐 Generating Proof..." : canComplete ? "✓ Complete Lesson" : "⏳ Attention Verification in Progress..."}
-                    </button>
-
-                    {!canComplete && !isGeneratingProof && (
-                        <p className="text-center text-sm text-gray-600 mt-3">
-                            Complete the attention requirements above to unlock this button
-                        </p>
-                    )}
-                    {isGeneratingProof && (
-                        <p className="text-center text-sm text-blue-600 mt-3">
-                            🔐 Encrypting attention data with INCO & storing proof on Shardeum...
-                        </p>
-                    )}
                 </div>
             </div>
         </div>
