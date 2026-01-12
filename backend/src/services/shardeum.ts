@@ -1,5 +1,9 @@
 import { ethers } from 'ethers';
 import { Proof } from '../types/index.js';
+import dotenv from 'dotenv';
+
+// Ensure env vars loaded in ESM
+dotenv.config();
 
 /**
  * Shardeum Service - On-chain Proof Storage

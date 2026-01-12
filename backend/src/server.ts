@@ -1,13 +1,14 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+
+// Load environment variables FIRST before any service imports
+dotenv.config();
+
 import sessionRoutes from './routes/session.js';
 import verifyRoutes from './routes/verify.js';
 import proofRoutes from './routes/proof.js';
 import { shardeumService } from './services/shardeum.js';
-
-// Load environment variables
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
