@@ -71,7 +71,8 @@ export default function Lesson() {
     }, []);
 
     const handleVideoComplete = async (attentionScore: number) => {
-        console.log('🎉 Video complete with score:', attentionScore);
+        console.log('🎉 handleVideoComplete called with score:', attentionScore);
+        console.log('  Session data:', session);
 
         try {
             const attentionData = {
@@ -99,6 +100,7 @@ export default function Lesson() {
 
             // Save proof with score immediately
             sessionStorage.setItem("poaProof", JSON.stringify(proof));
+            console.log('✅ Proof saved to sessionStorage');
 
             // Try to generate proof via backend for blockchain anchoring
             if (session?.userId && session?.courseId) {
@@ -128,14 +130,9 @@ export default function Lesson() {
 
             console.log('🚀 Navigating to complete page...');
 
-            // Always redirect/navigate after completion
-            if (session?.redirectUrl) {
-                console.log('Redirecting to:', session.redirectUrl);
-                window.location.href = session.redirectUrl;
-            } else {
-                console.log('Navigating to /complete');
-                navigate("/complete");
-            }
+            // Always navigate to complete page first to show proof
+            // The redirectUrl will be used by the "Return to Course" button if user clicks it
+            navigate("/complete");
         } catch (error) {
             console.error("❌ Unexpected error in handleVideoComplete:", error);
             // Still navigate even if there's an error
@@ -170,7 +167,6 @@ export default function Lesson() {
                     <VideoPlayer
                         videoUrl={session.videoUrl}
                         courseId={session.courseId}
-                        sessionId={session.sessionId}
                         userId={session.userId}
                         duration={session.duration}
                         onComplete={handleVideoComplete}

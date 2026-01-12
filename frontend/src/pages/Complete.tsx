@@ -7,23 +7,32 @@ export default function Complete() {
     const [score, setScore] = useState<number>(65);
 
     useEffect(() => {
+        console.log('📄 Complete page mounted');
         const proofData = sessionStorage.getItem("poaProof");
         const sessionData = sessionStorage.getItem("poaSession");
 
+        console.log('  poaProof from storage:', proofData);
+        console.log('  poaSession from storage:', sessionData);
+
         if (proofData) {
             const parsed = JSON.parse(proofData);
+            console.log('  Parsed proof:', parsed);
             setProof(parsed);
             if (parsed.attentionScore) {
                 setScore(parsed.attentionScore);
+                console.log('  Setting score to:', parsed.attentionScore);
             }
         } else if (sessionData) {
             // If we got here without proof, still show success page
             const session = JSON.parse(sessionData);
+            console.log('  No proof found, creating from session:', session);
             setProof({
                 sessionId: session.sessionId,
                 courseId: session.courseId,
                 attentionScore: score
             });
+        } else {
+            console.warn('  ⚠️ No proof or session data found in storage!');
         }
     }, []);
 
@@ -134,7 +143,11 @@ export default function Complete() {
                         Return to Course
                     </button>
                     <button
-                        onClick={() => navigate("/start")}
+                        onClick={() => {
+                            sessionStorage.removeItem("poaSession");
+                            sessionStorage.removeItem("poaProof");
+                            navigate("/");
+                        }}
                         style={{
                             background: '#333',
                             color: '#aaa',
