@@ -8,14 +8,28 @@ export interface ApiResponse<T> {
     error?: string;
 }
 
-// ID Generation API
+// ID Generation API - Auto-generate unique IDs
 export const idGenerationApi = {
     generateIds: async () => {
-        const response = await fetch(`${API_BASE_URL}/session/generate-ids`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-        });
-        return response.json();
+        try {
+            const response = await fetch(`${API_BASE_URL}/session/generate-ids`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+            });
+            return response.json();
+        } catch (error) {
+            console.error('Failed to generate IDs from backend, using local generation:', error);
+            // Fallback to local generation
+            return {
+                success: true,
+                ids: {
+                    userId: 'USR_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+                    courseId: 'COURSE_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+                    lessonId: 'LESSON_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+                    sessionId: 'SESSION_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+                }
+            };
+        }
     },
 };
 
@@ -36,19 +50,10 @@ export const sessionApi = {
     },
 };
 
-// Verification API
-export const verifyApi = {
-    verify: async (attentionData: any) => {
-        const response = await fetch(`${API_BASE_URL}/verify/verify`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(attentionData),
-        });
-        return response.json();
-    },
-
-    getRules: async () => {
-        const response = await fetch(`${API_BASE_URL}/verify/rules`);
+// Courses API
+export const coursesApi = {
+    getAll: async () => {
+        const response = await fetch(`${API_BASE_URL}/courses`);
         return response.json();
     },
 };
@@ -75,15 +80,22 @@ export const proofApi = {
     },
 };
 
-// Network info
-export const networkApi = {
-    info: async () => {
-        const response = await fetch('http://localhost:3001/api/network');
-        return response.json();
-    },
-
-    health: async () => {
-        const response = await fetch('http://localhost:3001/health');
+// Completions API
+export const completionsApi = {
+    save: async (completion: {
+        userId: string;
+        courseId: string;
+        lessonId: string;
+        proofId?: string;
+        sessionId?: string;
+        verified: boolean;
+        attentionScore: number;
+    }) => {
+        const response = await fetch(`${API_BASE_URL}/completions`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(completion),
+        });
         return response.json();
     },
 };

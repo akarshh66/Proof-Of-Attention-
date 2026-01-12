@@ -7,6 +7,32 @@ const router = Router();
 const sessions = new Map<string, Session>();
 
 /**
+ * Generate new IDs for a session
+ * Called automatically by the frontend
+ */
+router.post('/generate-ids', (req: Request, res: Response) => {
+    try {
+        const sessionId = `SESSION_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        const userId = `USR_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        const courseId = `COURSE_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        const lessonId = `LESSON_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+        res.json({
+            success: true,
+            ids: {
+                sessionId,
+                userId,
+                courseId,
+                lessonId,
+            },
+        });
+    } catch (error) {
+        console.error('ID generation error:', error);
+        res.status(500).json({ error: 'Failed to generate IDs' });
+    }
+});
+
+/**
  * Create a new POA session
  * Called when user is redirected from course platform
  */
@@ -21,7 +47,7 @@ router.post('/create', (req: Request, res: Response) => {
         }
 
         // Generate unique session ID
-        const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        const sessionId = `SESSION_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
         const session: Session = {
             sessionId,

@@ -12,12 +12,34 @@ export default function Lesson() {
     const canComplete = timeSpent >= 60 && isFocused && !isIdle;
 
     useEffect(() => {
-        const sessionData = sessionStorage.getItem("poaSession");
-        if (!sessionData) {
-            navigate("/start");
-            return;
+        // Check for query params from course platform
+        const params = new URLSearchParams(window.location.search);
+        const videoUrl = params.get('videoUrl');
+        const duration = params.get('duration');
+        const redirectUrl = params.get('redirectUrl');
+
+        // If coming from course platform, use those params
+        if (params.has('userId') && params.has('courseId')) {
+            const sessionData = {
+                sessionId: params.get('sessionId') || 'SESSION_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+                userId: params.get('userId'),
+                courseId: params.get('courseId'),
+                lessonId: params.get('lessonId') || 'LESSON_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+                videoUrl: videoUrl || 'https://commondatastorage.googleapis.com/gtv-videos-library/sample/BigBuckBunny.mp4',
+                duration: duration ? parseInt(duration) : 60,
+                redirectUrl: redirectUrl || null,
+            };
+            sessionStorage.setItem("poaSession", JSON.stringify(sessionData));
+            setSession(sessionData);
+        } else {
+            // Original flow - get from session storage
+            const sessionData = sessionStorage.getItem("poaSession");
+            if (!sessionData) {
+                navigate("/start");
+                return;
+            }
+            setSession(JSON.parse(sessionData));
         }
-        setSession(JSON.parse(sessionData));
     }, [navigate]);
 
     const handleComplete = async () => {

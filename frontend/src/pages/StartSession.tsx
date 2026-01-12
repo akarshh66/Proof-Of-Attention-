@@ -20,8 +20,8 @@ export default function StartSession() {
             return;
         }
 
-        // Generate unique sessionId
-        const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        // Generate unique sessionId with timestamp and random string
+        const sessionId = `SESSION_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
         // Store session data
         const sessionData = {
