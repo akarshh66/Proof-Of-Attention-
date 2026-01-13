@@ -232,14 +232,22 @@ cd backend
 npm run dev
 ```
 
-**Terminal 2 - Frontend:**
+**Terminal 2 - Main Frontend (POA Verification UI):**
 ```bash
 cd frontend
 npm run dev
 ```
 
-Frontend: http://localhost:5174  
-Backend: http://localhost:3001
+**Terminal 3 - Learning Platform (Course Dashboard):**
+```bash
+cd course-platform/frontend
+npm run dev
+```
+
+**URLs:**
+- POA Main (Verification): http://localhost:5174
+- Learning Platform (Courses): http://localhost:5175
+- Backend API: http://localhost:3001
 
 ---
 
@@ -282,6 +290,11 @@ When requirements met:
 ```
 https://course-platform.com/lesson-complete?proofId=XYZ
 ```
+
+### Step 8: Dashboard Update
+- Proof automatically saved to **Your Completed Courses** section
+- Shows: Course name, attention score, completion date, blockchain proof
+- Persists across sessions via localStorage
 
 ---
 
@@ -390,45 +403,110 @@ POA works for:
 
 ```
 POA2/
-├── frontend/
+├── frontend/                      # Main POA verification UI
 │   ├── src/
 │   │   ├── pages/
-│   │   │   ├── StartSession.tsx    # Entry point
-│   │   │   ├── Lesson.tsx          # Attention tracking
-│   │   │   └── Complete.tsx        # Proof display
+│   │   │   ├── Home.tsx          # Dashboard with completed courses
+│   │   │   ├── Lesson.tsx        # Video player + attention tracking
+│   │   │   ├── Complete.tsx      # Proof validation & completion
+│   │   │   ├── Quiz.tsx          # Quiz interface
+│   │   │   └── StartSession.tsx  # Session initialization
+│   │   ├── components/
+│   │   │   └── VideoPlayer.tsx   # Video with real-time tracking
 │   │   ├── hooks/
-│   │   │   └── useAttentionTracker.ts
+│   │   │   └── useAttentionTracker.ts  # Attention scoring logic
 │   │   ├── services/
-│   │   │   └── api.ts              # Backend API calls
+│   │   │   └── api.ts            # Backend API client
 │   │   └── App.tsx
 │   └── package.json
+│
+├── course-platform/               # Learning Platform (Course Catalog)
+│   └── frontend/
+│       ├── src/
+│       │   ├── pages/
+│       │   │   ├── CourseList.tsx      # Courses + Completed courses
+│       │   │   ├── CourseDetails.tsx   # Course info & launch POA
+│       │   │   └── ProofPage.tsx       # View proof details
+│       │   ├── services/
+│       │   │   └── api.ts
+│       │   ├── styles/
+│       │   │   ├── App.css        # Dark theme styling
+│       │   │   └── pages.css
+│       │   └── App.tsx
+│       └── package.json
 │
 ├── backend/
 │   ├── src/
 │   │   ├── routes/
-│   │   │   ├── session.ts          # Session management
-│   │   │   ├── verify.ts           # Attention verification
-│   │   │   └── proof.ts            # Proof generation
+│   │   │   ├── session.ts         # Session management
+│   │   │   ├── verify.ts          # Attention verification rules
+│   │   │   ├── proof.ts           # Proof generation & retrieval
+│   │   │   ├── courses.ts         # Course data endpoints
+│   │   │   └── quiz.ts            # Quiz endpoints
 │   │   ├── services/
-│   │   │   ├── inco.ts             # INCO integration
-│   │   │   └── shardeum.ts         # Shardeum integration
+│   │   │   ├── inco.ts            # INCO FHE integration
+│   │   │   ├── shardeum.ts        # Shardeum blockchain
+│   │   │   └── quizData.ts        # Quiz data management
+│   │   ├── data/
+│   │   │   └── quizzes.ts         # Quiz content
 │   │   ├── types/
-│   │   │   └── index.ts            # TypeScript types
-│   │   └── server.ts               # Express server
+│   │   │   └── index.ts           # TypeScript types
+│   │   └── server.ts              # Express server
+│   ├── contracts/
+│   │   ├── POAProofRegistry.sol   # Main proof storage contract
+│   │   └── AttentionVerifier.sol  # Attention verification logic
 │   └── package.json
 │
-└── README.md
+├── lightning-rod/                 # INCO integration & contracts
+│   ├── backend/                   # INCO contract deployment
+│   └── contracts/                 # Smart contract source code
+│
+├── ARCHITECTURE.md                # System design documentation
+├── DEPLOYMENT.md                  # Deployment instructions
+├── QUICKSTART.md                  # Quick start guide
+├── TESTING.md                     # Testing procedures
+└── README.md                       # This file
 ```
+
+---
+
+## 🎯 Core Features Implemented
+
+### ✅ Real-Time Attention Tracking
+- **Video Player** - Built-in video player with engagement monitoring
+- **Attention Scoring** - Calculates 0-100 score based on focus, activity, and idle time
+- **Session Management** - Unique sessionId + userId for each verification
+- **Completion Requirements**:
+  - Minimum 60 seconds active time
+  - 80%+ tab focus time
+  - No extended idle periods (>10s)
+
+### 📊 Dashboard & Course Management
+- **Completed Courses Section** - Shows all verified course completions on both frontends
+- **Proof Display** - Shows attention score, blockchain TX, proof ID, completion date
+- **Dark Theme UI** - Modern, professional interface across platforms
+- **Persistent Storage** - Completed courses saved to localStorage
+- **Validation Animation** - Visual confirmation when proof is validated
+
+### 🔐 Privacy & Security
+- **INCO Integration** - FHE-based encrypted verification
+- **Blockchain Anchoring** - Immutable proof storage on Shardeum
+- **Zero-Knowledge** - Proof generated without exposing raw attention data
+- **Demo Mode** - Full functionality without blockchain configuration
 
 ---
 
 ## 🔐 Demo Mode
 
 If blockchain credentials are not configured, the system runs in **demo mode**:
-- INCO: Simulates privacy computation
+- INCO: Simulates privacy-preserving computation
 - Shardeum: Generates mock transaction hashes
+- All features fully functional for development and testing
 
-Perfect for development and testing!
+**To enable production mode:**
+1. Set blockchain credentials in `backend/.env`
+2. Deploy smart contracts to INCO and Shardeum
+3. Update `INCO_POA_CONTRACT_ADDRESS` and `SHARDEUM_POA_CONTRACT_ADDRESS`
 
 ---
 
@@ -493,4 +571,4 @@ For questions or issues:
 
 ---
 
-**Built with 💚 for verifiable online learning**
+
