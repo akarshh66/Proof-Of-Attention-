@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 export default function Home() {
@@ -10,6 +10,12 @@ export default function Home() {
         lessonId: "",
     });
     const [errors, setErrors] = useState<{ [key: string]: string }>({});
+    const [completedCourses, setCompletedCourses] = useState<any[]>([]);
+
+    useEffect(() => {
+        const completed = JSON.parse(localStorage.getItem("completedCourses") || "[]");
+        setCompletedCourses(completed);
+    }, []);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -60,6 +66,7 @@ export default function Home() {
             sessionId,
             userId: formData.userId,
             courseId: formData.courseId,
+            courseName: formData.courseId,
             lessonId: formData.lessonId,
             startTime: new Date().toISOString(),
         };
@@ -182,8 +189,8 @@ export default function Home() {
                                     onChange={handleInputChange}
                                     placeholder="e.g., user@example.com or USER123"
                                     className={`w-full px-4 py-3 rounded-lg border-2 transition-colors ${errors.userId
-                                            ? "border-red-500 bg-red-50"
-                                            : "border-gray-300 bg-white focus:border-blue-500 focus:bg-white"
+                                        ? "border-red-500 bg-red-50"
+                                        : "border-gray-300 bg-white focus:border-blue-500 focus:bg-white"
                                         } focus:outline-none`}
                                 />
                                 {errors.userId && (
@@ -207,8 +214,8 @@ export default function Home() {
                                     onChange={handleInputChange}
                                     placeholder="e.g., COURSE101 or AI-ML-001"
                                     className={`w-full px-4 py-3 rounded-lg border-2 transition-colors ${errors.courseId
-                                            ? "border-red-500 bg-red-50"
-                                            : "border-gray-300 bg-white focus:border-blue-500 focus:bg-white"
+                                        ? "border-red-500 bg-red-50"
+                                        : "border-gray-300 bg-white focus:border-blue-500 focus:bg-white"
                                         } focus:outline-none`}
                                 />
                                 {errors.courseId && (
@@ -232,8 +239,8 @@ export default function Home() {
                                     onChange={handleInputChange}
                                     placeholder="e.g., LESSON5 or L-001"
                                     className={`w-full px-4 py-3 rounded-lg border-2 transition-colors ${errors.lessonId
-                                            ? "border-red-500 bg-red-50"
-                                            : "border-gray-300 bg-white focus:border-blue-500 focus:bg-white"
+                                        ? "border-red-500 bg-red-50"
+                                        : "border-gray-300 bg-white focus:border-blue-500 focus:bg-white"
                                         } focus:outline-none`}
                                 />
                                 {errors.lessonId && (
@@ -246,8 +253,8 @@ export default function Home() {
                                 type="submit"
                                 disabled={isLoading}
                                 className={`w-full py-3 px-4 rounded-lg font-semibold text-white transition-all duration-200 mt-8 ${isLoading
-                                        ? "bg-gray-400 cursor-not-allowed"
-                                        : "bg-blue-600 hover:bg-blue-700 active:scale-95"
+                                    ? "bg-gray-400 cursor-not-allowed"
+                                    : "bg-blue-600 hover:bg-blue-700 active:scale-95"
                                     }`}
                             >
                                 {isLoading ? (
@@ -273,6 +280,56 @@ export default function Home() {
                     </div>
                 </div>
             </div>
+
+            {/* Completed Courses Dashboard */}
+            {completedCourses && completedCourses.length > 0 ? (
+                <div className="bg-white border-t border-gray-200 py-16">
+                    <div className="max-w-7xl mx-auto px-4">
+                        <h2 className="text-3xl font-bold text-gray-900 mb-2">📊 Your Completed Courses</h2>
+                        <p className="text-gray-600 mb-8">Verified courses with proof of attention</p>
+                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {completedCourses.map((course, index) => (
+                                <div
+                                    key={index}
+                                    className="bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-300 rounded-lg p-6 shadow-md"
+                                >
+                                    <div className="flex items-start justify-between mb-4">
+                                        <div className="flex-1">
+                                            <h3 className="text-lg font-bold text-green-900">{course.courseName}</h3>
+                                            <p className="text-sm text-green-700 mt-1">✅ Completed</p>
+                                        </div>
+                                        <div className="text-3xl">🏆</div>
+                                    </div>
+
+                                    <div className="space-y-3 text-sm">
+                                        <div className="bg-white bg-opacity-60 rounded p-3">
+                                            <p className="text-gray-600">Attention Score</p>
+                                            <p className="text-2xl font-bold text-green-600">{Math.round(course.attentionScore)}/100</p>
+                                        </div>
+
+                                        <div className="bg-white bg-opacity-60 rounded p-3">
+                                            <p className="text-gray-600">Completed</p>
+                                            <p className="text-green-700 font-semibold">{new Date(course.completedAt).toLocaleDateString()}</p>
+                                        </div>
+
+                                        {course.blockchainTxHash && (
+                                            <div className="bg-white bg-opacity-60 rounded p-3">
+                                                <p className="text-gray-600">Blockchain Proof</p>
+                                                <p className="text-green-700 font-mono text-xs break-all">{course.blockchainTxHash.slice(0, 16)}...</p>
+                                            </div>
+                                        )}
+
+                                        <div className="bg-white bg-opacity-60 rounded p-3">
+                                            <p className="text-gray-600">Proof ID</p>
+                                            <p className="text-green-700 font-mono text-xs break-all">{course.proofId?.slice(0, 20)}...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            ) : null}
 
             {/* Footer */}
             <div className="bg-gray-900 text-white mt-20">

@@ -5,6 +5,7 @@ export default function Complete() {
     const navigate = useNavigate();
     const [proof, setProof] = useState<any>(null);
     const [score, setScore] = useState<number>(65);
+    const [showValidation, setShowValidation] = useState<boolean>(false);
 
     useEffect(() => {
         console.log('📄 Complete page mounted');
@@ -37,25 +38,89 @@ export default function Complete() {
     }, []);
 
     const handleRedirect = () => {
+        const proofData = sessionStorage.getItem("poaProof");
         const sessionData = sessionStorage.getItem("poaSession");
-        if (sessionData) {
-            const session = JSON.parse(sessionData);
-            if (session.redirectUrl) {
-                window.location.href = session.redirectUrl;
-                return;
-            }
-        }
 
-        // Clear session data and go back to start
-        sessionStorage.removeItem("poaSession");
-        sessionStorage.removeItem("poaProof");
-        navigate("/start");
+        // Log proof completion
+        console.log("\n════════════════════════════════════════");
+        console.log("✅ PROOF OBTAINED - Course Completed!");
+        console.log("════════════════════════════════════════");
+
+        if (proofData) {
+            const proof = JSON.parse(proofData);
+            console.log({
+                message: "✅ You have successfully completed this course with verified attention.",
+                proofId: proof.proofId,
+                sessionId: proof.sessionId,
+                userId: proof.userId,
+                courseId: proof.courseId,
+                attentionScore: `${Math.round(proof.attentionScore || 0)}/100`,
+                timestamp: new Date().toISOString(),
+                blockchainTxHash: proof.blockchainTxHash || "On-chain verification in progress"
+            });
+
+            // Save completion data to localStorage for dashboard
+            const completedCourses = JSON.parse(localStorage.getItem("completedCourses") || "[]");
+            const session = sessionData ? JSON.parse(sessionData) : {};
+            const courseCompletion = {
+                courseId: proof.courseId,
+                courseName: session.courseName || proof.courseId,
+                attentionScore: proof.attentionScore,
+                proofId: proof.proofId,
+                sessionId: proof.sessionId,
+                completedAt: new Date().toISOString(),
+                blockchainTxHash: proof.blockchainTxHash
+            };
+            completedCourses.push(courseCompletion);
+            localStorage.setItem("completedCourses", JSON.stringify(completedCourses));
+            console.log('✅ Completion saved to dashboard', courseCompletion);
+        }
+        console.log("════════════════════════════════════════\n");
+
+        // Show validation notification
+        setShowValidation(true);
+
+        // After showing the validation message, redirect
+        setTimeout(() => {
+            if (sessionData) {
+                const session = JSON.parse(sessionData);
+                if (session.redirectUrl) {
+                    window.location.href = session.redirectUrl;
+                    return;
+                }
+            }
+
+            // Clear session data and go back to start
+            sessionStorage.removeItem("poaSession");
+            sessionStorage.removeItem("poaProof");
+            navigate("/start");
+        }, 2000);
     };
 
     if (!proof) {
         return (
             <div style={{ minHeight: '100vh', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <div style={{ color: '#999' }}>Loading...</div>
+            </div>
+        );
+    }
+
+    if (showValidation) {
+        return (
+            <div style={{ minHeight: '100vh', background: '#1a1a1a', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+                <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: '4em', marginBottom: '20px', animation: 'pulse 1s infinite' }}>✅</div>
+                    <h1 style={{ fontSize: '32px', fontWeight: 'bold', color: '#4ade80', marginBottom: '15px' }}>Proof Validated!</h1>
+                    <p style={{ fontSize: '16px', color: '#86efac', marginBottom: '10px' }}>Your course completion has been verified</p>
+                    <p style={{ fontSize: '14px', color: '#22c55e', fontWeight: '600' }}>🏆 {proof.courseId || 'Course'} - Completed with {Math.round(score)}/100 attention score</p>
+                    <p style={{ fontSize: '12px', color: '#999', marginTop: '20px' }}>Redirecting...</p>
+                </div>
+                <style>{`
+                    @keyframes pulse {
+                        0%, 100% { opacity: 1; transform: scale(1); }
+                        50% { opacity: 0.7; transform: scale(1.1); }
+                    }
+                `}</style>
             </div>
         );
     }

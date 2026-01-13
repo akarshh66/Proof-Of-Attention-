@@ -467,19 +467,6 @@ export default function VideoPlayer({
                         zIndex: 50,
                         minWidth: '200px',
                     }}>
-                        {/* Skip Prevention Notice */}
-                        <div style={{
-                            fontSize: '10px',
-                            color: '#ffc107',
-                            marginBottom: '12px',
-                            padding: '8px',
-                            background: 'rgba(255, 193, 7, 0.1)',
-                            borderRadius: '4px',
-                            border: '1px solid #ffc107',
-                        }}>
-                            🔒 Skipping is not allowed. Watch the full video.
-                        </div>
-
                         <div style={{ fontSize: '12px', color: '#999', marginBottom: '8px' }}>📊 Attention Score</div>
                         <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#667eea' }}>
                             {Math.round(realTimeScore)}/{MAX_SCORE}

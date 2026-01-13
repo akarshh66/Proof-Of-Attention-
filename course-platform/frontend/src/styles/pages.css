@@ -1,11 +1,11 @@
 .page {
     min-height: 100vh;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: #0a0a0a;
     padding: 40px 20px;
 }
 
 .course-details-page {
-    background: white;
+    background: #0a0a0a;
 }
 
 /* Course Details */
@@ -25,12 +25,12 @@
 
 .course-header-content h1 {
     font-size: 2.5em;
-    color: #333;
+    color: #fff;
     margin-bottom: 20px;
 }
 
 .course-description {
-    color: #666;
+    color: #aaa;
     font-size: 1.1em;
     line-height: 1.6;
     margin-bottom: 30px;
@@ -44,21 +44,22 @@
 }
 
 .stat {
-    background: #f5f5f5;
+    background: #1a1a1a;
     padding: 20px;
     border-radius: 8px;
+    border: 1px solid #333;
 }
 
 .stat-label {
     display: block;
-    color: #999;
+    color: #888;
     font-size: 0.9em;
     margin-bottom: 8px;
 }
 
 .stat-value {
     display: block;
-    color: #333;
+    color: #fff;
     font-size: 1.3em;
     font-weight: 600;
 }
@@ -68,7 +69,7 @@
 }
 
 .course-features h3 {
-    color: #333;
+    color: #fff;
     margin-bottom: 15px;
     font-size: 1.2em;
 }
@@ -78,9 +79,9 @@
 }
 
 .course-features li {
-    color: #666;
+    color: #aaa;
     padding: 10px 0;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid #333;
 }
 
 .course-features li:last-child {
@@ -88,12 +89,12 @@
 }
 
 .info-box {
-    background: #f0f4ff;
+    background: rgba(102, 126, 234, 0.1);
     border-left: 4px solid #667eea;
     padding: 20px;
     border-radius: 6px;
     margin-top: 30px;
-    color: #444;
+    color: #aaa;
     line-height: 1.6;
 }
 
@@ -105,12 +106,13 @@
 }
 
 .proof-container {
-    background: white;
+    background: #1a1a1a;
     border-radius: 12px;
     overflow: hidden;
     max-width: 500px;
     width: 100%;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+    border: 1px solid #333;
 }
 
 .proof-status {
@@ -157,7 +159,7 @@
     justify-content: space-between;
     align-items: center;
     padding: 15px 0;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid #333;
 }
 
 .detail-row:last-child {
@@ -165,12 +167,12 @@
 }
 
 .detail-row .label {
-    color: #999;
+    color: #888;
     font-weight: 600;
 }
 
 .detail-row .value {
-    color: #333;
+    color: #fff;
     font-family: 'Courier New', monospace;
     font-size: 0.9em;
 }
@@ -206,12 +208,12 @@
 }
 
 .error-message {
-    background: #ffe5e5;
-    color: #c33;
+    background: rgba(197, 51, 51, 0.2);
+    color: #ff6b6b;
     padding: 20px;
     border-radius: 6px;
     margin-bottom: 30px;
-    border-left: 4px solid #c33;
+    border-left: 4px solid #ff6b6b;
 }
 
 @media (max-width: 768px) {

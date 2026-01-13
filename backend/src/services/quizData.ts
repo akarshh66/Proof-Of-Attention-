@@ -1,5 +1,6 @@
 import { CourseQuiz } from '../types/quiz.js';
 
+// Empty quiz data - quiz system removed
 export const courseQuizzes: CourseQuiz[] = [
     {
         courseId: 'course_001',

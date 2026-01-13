@@ -157,7 +157,7 @@ export default function Lesson() {
             <div style={{ background: '#0a0a0a', borderBottom: '1px solid #333', padding: '20px' }}>
                 <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
                     <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: 'white', margin: 0 }}>📹 Video Lesson</h1>
-                    <p style={{ fontSize: '12px', color: '#999', marginTop: '5px', margin: 0 }}>Watch and answer quiz questions</p>
+                    <p style={{ fontSize: '12px', color: '#999', marginTop: '5px', margin: 0 }}>Watch the video attentively</p>
                 </div>
             </div>
 
@@ -174,6 +174,15 @@ export default function Lesson() {
                     />
                 </div>
 
+                {/* Session Info Card */}
+                <div style={{ background: '#0a0a0a', borderRadius: '8px', padding: '20px', border: '1px solid #333', marginBottom: '20px' }}>
+                    <p style={{ fontSize: '11px', color: '#999', margin: 0, marginBottom: '8px' }}>🆔 Session IDs (Generated Randomly)</p>
+                    <div style={{ fontSize: '11px', color: '#667eea', fontFamily: 'monospace', wordBreak: 'break-all' }}>
+                        <div>Session: {session?.sessionId}</div>
+                        <div style={{ marginTop: '4px' }}>User: {session?.userId}</div>
+                    </div>
+                </div>
+
                 {/* Info Card */}
                 <div style={{ background: '#0a0a0a', borderRadius: '8px', padding: '30px', border: '1px solid #333' }}>
                     <h2 style={{ fontSize: '18px', fontWeight: '600', color: 'white', marginBottom: '20px', margin: 0 }}>How It Works</h2>
@@ -184,11 +193,11 @@ export default function Lesson() {
                         </div>
                         <div>
                             <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#667eea', marginBottom: '10px' }}>2️⃣</div>
-                            <p style={{ fontSize: '14px', margin: 0 }}>Answer quiz questions to prove attention.</p>
+                            <p style={{ fontSize: '14px', margin: 0 }}>Your attention is tracked in real-time.</p>
                         </div>
                         <div>
                             <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#667eea', marginBottom: '10px' }}>3️⃣</div>
-                            <p style={{ fontSize: '14px', margin: 0 }}>Get your attention score verified.</p>
+                            <p style={{ fontSize: '14px', margin: 0 }}>Get your verified attention score as proof.</p>
                         </div>
                     </div>
                 </div>
