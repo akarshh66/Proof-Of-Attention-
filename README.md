@@ -2,6 +2,19 @@
 
 > A privacy-preserving attention verification system for online courses using INCO and Shardeum blockchains.
 
+## 📋 About POA
+
+**Proof of Attention (POA)** is a privacy-first verification system that cryptographically proves learners paid real attention to online content. Unlike traditional completion certificates or AI-based attention detection, POA:
+
+- ✅ **Measures actual engagement signals** - Active time, focus, mouse/keyboard activity
+- ✅ **Preserves privacy** - Raw behavioral data is never exposed
+- ✅ **Enables verification** - Proofs are anchored on-chain for immutable verification
+- ✅ **Works at scale** - Integrates with any course platform seamlessly
+
+The system bridges course platforms and learners through a privacy-preserving verification layer, creating trustworthy proof of engagement without surveillance.
+
+---
+
 ## 🎯 One-Line Mission
 
 **"This MVP verifies real learner attention using measurable engagement signals before allowing lesson completion."**
@@ -47,6 +60,105 @@ POA is an **external verification service** that integrates with course platform
 
 ---
 
+## 🏗️ Why INCO & Shardeum?
+
+### 🔐 **INCO - Privacy Layer (Confidential Computation)**
+
+**Why We Chose INCO:**
+- **Fully Homomorphic Encryption (FHE)** - Compute on encrypted data without decryption
+- **Verifiable Computation** - Prove results without exposing inputs
+- **Privacy Compliance** - GDPR and privacy regulations ready
+- **Zero-Knowledge Proofs** - Prove attention without revealing behavioral data
+
+**What INCO Does in POA:**
+1. **Encrypts attention data** - Mouse movements, focus events, idle time → encrypted
+2. **Verifies privately** - Checks if user met attention requirements (60s active + 80% focus)
+3. **Outputs only results** - Returns: `verified: true/false` + `attentionScore: 0-100`
+4. **Raw data stays private** - Never exposed to course platform, blockchain, or auditors
+
+**Example:** A learner watches a course for 90 seconds with 85% focus:
+- Raw data: `{focusEvents: [12, 15, 18, ...], idleEvents: [5, 8], ...}` → **ENCRYPTED**
+- Computation: Done on encrypted data → **VERIFIED PRIVATELY**
+- Result: `{verified: true, attentionScore: 85}` → **SHARED PUBLICLY**
+
+---
+
+### ⛓️ **Shardeum - Proof Storage (Blockchain)**
+
+**Why We Chose Shardeum:**
+- **Low cost** - Proves blockchain doesn't require expensive gas fees
+- **Scalability** - Instant finality and high throughput
+- **Privacy-friendly** - Complements INCO's encryption
+- **Decentralized** - No single point of failure
+
+**What Shardeum Does in POA:**
+1. **Stores proof metadata** - SessionId, proofHash, timestamp, verification status
+2. **Provides immutability** - Once stored, proof cannot be changed
+3. **Enables verification** - Anyone can verify: "Did user X complete lesson Y?"
+4. **Creates audit trail** - Transparent history of all completions
+
+**What Shardeum Does NOT Store:**
+- ❌ Raw attention data (encrypted by INCO)
+- ❌ Personal information
+- ❌ Video content
+- ❌ Behavioral signals
+
+**Smart Contract:** `POAProofRegistry.sol` on Shardeum stores structured proof data.
+
+---
+
+### 🔗 **Integration Flow:**
+
+```
+User Activity Data
+    ↓
+INCO (Encrypt & Verify Privately)
+    ↓
+Proof Generated (only metadata)
+    ↓
+Shardeum (Store immutable proof on-chain)
+    ↓
+Proof ID returned to user
+    ↓
+Course platform verifies proof
+```
+
+---
+
+## 📋 Smart Contract Addresses & Details
+
+### **POAProofRegistry.sol**
+
+**Purpose:** Stores verified proof metadata on-chain for permanent verification
+
+**Contract Details:**
+- **Language:** Solidity ^0.8.0
+- **Network:** Shardeum (Mesh Testnet)
+- **Function:** `storeProof(proofId, sessionId, proofHash, verified, attentionTime)`
+- **Key Data Stored:**
+  ```solidity
+  struct Proof {
+    string sessionId;      // Unique session identifier
+    bytes32 proofHash;     // Hash of encrypted proof
+    bool verified;         // Verification status
+    uint256 attentionTime; // Seconds of active attention
+    uint256 timestamp;     // Block timestamp
+  }
+  ```
+
+**Events:**
+- `ProofStored(proofId, sessionId, verified, timestamp)` - Emitted when proof is stored
+
+**Deployment Status:**
+- ✅ Contract compiled and ready for deployment
+- ⏳ Deployment addresses will be added post-deployment:
+  ```
+  SHARDEUM_POA_CONTRACT_ADDRESS = 0xF51EeF10AbAE1f1Dc62D2b64fBB37672DA9E71f3
+  INCO_POA_CONTRACT_ADDRESS = 0x[TO_BE_DEPLOYED]
+  ```
+
+---
+
 ## 🔒 Privacy & Blockchain Integration
 
 ### **INCO (Privacy Layer)**
@@ -89,19 +201,23 @@ npm install
 ```env
 PORT=3001
 
-# INCO Network
+# INCO Network (Privacy Computation)
 INCO_RPC_URL=https://validator.rivest.inco.org
 INCO_CHAIN_ID=9090
 INCO_PRIVATE_KEY=your_private_key
+INCO_POA_CONTRACT_ADDRESS=0x[INCO_CONTRACT_ADDRESS]
 
-# Shardeum Network
+# Shardeum Network (Proof Storage)
 SHARDEUM_RPC_URL=https://api-mezame.shardeum.org
 SHARDEUM_CHAIN_ID=8119
 SHARDEUM_PRIVATE_KEY=your_private_key
+SHARDEUM_POA_CONTRACT_ADDRESS=0x[SHARDEUM_CONTRACT_ADDRESS]
 
-# Contract Address (after deployment)
-POA_CONTRACT_ADDRESS=0x...
+# Current deployment status (demo mode if not set)
+DEPLOYMENT_STATUS=demo
 ```
+
+**Note:** Without smart contract addresses configured, the system runs in **demo mode** with simulated transactions.
 
 2. **Frontend Configuration** (`frontend/.env`):
 ```env
@@ -329,8 +445,21 @@ Perfect for development and testing!
 
 ### Technical Highlights
 
-- **INCO Integration** - Privacy-preserving computation for sensitive data
-- **Shardeum Integration** - Immutable proof anchoring
+- **INCO Integration** - Privacy-preserving computation using FHE for encrypted verification
+  - Verifies attention on encrypted data
+  - Zero-knowledge proofs for compliance
+  - GDPR-compliant data handling
+  
+- **Shardeum Integration** - Cost-effective immutable proof anchoring
+  - Sub-cent transaction costs
+  - Instant finality
+  - Decentralized proof storage
+  
+- **Privacy-First Architecture** - Raw data never publicly exposed
+  - Only metadata stored on-chain
+  - Encrypted computation layer
+  - User-centric data ownership
+
 - **Modular Architecture** - Easy to extend/modify
 - **RESTful API** - Standard integration pattern
 - **TypeScript** - Type-safe development
